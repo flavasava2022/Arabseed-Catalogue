@@ -1,8 +1,11 @@
+// api/index.js
+const querystring = require('querystring');
 const { manifest, catalogHandler, metaHandler, streamHandler } = require('../addon');
 
 export default async function handler(req, res) {
   const url = req.url;
 
+  // Set CORS headers for web compatibility
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
   res.setHeader('Content-Type', 'application/json');
@@ -17,7 +20,8 @@ export default async function handler(req, res) {
     const catalogMatch = url.match(/^\/catalog\/([^/]+)\/([^/]+)(?:\/(.+))?\.json$/);
     if (catalogMatch) {
       const [, type, id, extraStr] = catalogMatch;
-      const extra = extraStr ? JSON.parse(decodeURIComponent(extraStr)) : {};
+      // Parse query string safe instead of JSON.parse
+      const extra = extraStr ? querystring.parse(extraStr) : {};
       const result = await catalogHandler({ type, id, extra });
       return res.status(200).json(result);
     }
