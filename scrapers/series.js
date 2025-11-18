@@ -31,7 +31,7 @@ async function getSeries(skip = 0) {
       const seriesUrl = $elem.attr("href");
       const title = $elem.find(".post__info h3").text().trim();
       const posterUrl =
-        $elem.find(".poster__single img").attr("data-src") ||
+        $elem.find(".post__image img").attr("data-src") ||
         $elem.find(".post__image img").attr("src");
       const description = $elem.find(".post__info p").text().trim();
 
