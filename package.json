@@ -2,9 +2,9 @@
   "name": "arabseed-stremio",
   "version": "1.0.0",
   "description": "Stremio addon for ArabSeed",
-  "main": "addon.js",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node addon.js"
+    "start": "node api/index.js"
   },
   "dependencies": {
     "stremio-addon-sdk": "^1.6.9",
