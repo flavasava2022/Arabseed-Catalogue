@@ -7,25 +7,26 @@ const builder = new addonBuilder(manifest);
 
 const catalogHandler = async ({ type, id, extra }) => {
   const skip = extra?.skip ? parseInt(extra.skip) : 0;
-if (type === 'movie' && id === 'arabseed-arabic-movies') {
-return {
-  metas: [
-    {
-      id: "asd:example-id",
-      type: "movie",
-      name: "احلى الاوقات",
-      poster: "https://a.asd.homes/wp-content/uploads/2025/11/Best-Times-2004-300x450.webp",
-      description: "وصف مختصر آمن",
-      releaseInfo: "2004",
 
-    }
-  ]
-};s
-}
+  if (type === 'movie' && id === 'arabseed-arabic-movies') {
+    return {
+      metas: [
+        {
+          id: "asd:example-id",
+          type: "movie",
+          name: "احلى الاوقات",
+          poster: "https://a.asd.homes/wp-content/uploads/2025/11/Best-Times-2004-300x450.webp",
+          description: "وصف مختصر آمن",
+          releaseInfo: "2004",
+        }
+      ]
+    };
+  }
   if (type === 'series' && id === 'arabseed-arabic-series') {
     const metas = await getSeries(skip);
     return { metas };
   }
+  
   return { metas: [] };
 };
 
