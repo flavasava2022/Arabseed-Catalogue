@@ -69,11 +69,13 @@ async function getMovieMeta(id) {
 
     const $ = cheerio.load(response.data);
     const title = $('.post__title h1').text().trim() || $('.post__name').text().trim();
-    const posterUrl = $('.poster__single img').attr('data-src') || $('.poster__single img').attr('src');
+   const posterUrl = $('.poster__single img').attr('src') || 
+                  $('.post__image img').attr('data-src') || 
+                  $('.post__image img').attr('src');
     const description = $('.story__text').text().trim() || $('.post__story').text().trim();
     const year = $('.year').text().trim();
 
-    const validPoster = posterUrl && posterUrl.startsWith('http') ? posterUrl : undefined;
+const validPoster = posterUrl && posterUrl.startsWith('https://') ? posterUrl : undefined;
 
     return {
       id: id,
