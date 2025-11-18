@@ -80,7 +80,7 @@ const validPoster = posterUrl && posterUrl.startsWith('https://') ? posterUrl : 
     return {
       id: id,
       type: 'movie',
-      name: title,
+      name: 'dsgfshgjdfgjdghfmdfnjfd',
       poster: validPoster,
       description: description,
       releaseInfo: year
