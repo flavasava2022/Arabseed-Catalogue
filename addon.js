@@ -1,4 +1,3 @@
-// addon.js
 const { addonBuilder } = require('stremio-addon-sdk');
 const manifest = require('./manifest');
 const { getMovies, getMovieMeta, getMovieStreams } = require('./scrapers/movies');
@@ -31,4 +30,4 @@ builder.defineStreamHandler(async ({ type, id }) => {
   return { streams: [] };
 });
 
-module.exports = { getInterface: () => builder.getInterface() };
+module.exports = builder.getInterface();

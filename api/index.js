@@ -1,21 +1,15 @@
-// api/index.js
-const addonInterface = require('../addon');
+const addon = require('../addon');
 
 export default async function handler(req, res) {
   const url = req.url;
 
-  // CORS headers for web compatibility
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
   res.setHeader('Content-Type', 'application/json');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const addon = addonInterface.getInterface();
-
     if (url === '/' || url === '/manifest.json') {
       return res.status(200).json(addon.manifest);
     }
