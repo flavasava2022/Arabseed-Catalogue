@@ -8,19 +8,19 @@ const builder = new addonBuilder(manifest);
 const catalogHandler = async ({ type, id, extra }) => {
   const skip = extra?.skip ? parseInt(extra.skip) : 0;
 if (type === 'movie' && id === 'arabseed-arabic-movies') {
-  return {
-    metas: [
-      {
-        id: "asd:%d9%81%d9%8a%d9%84%d9%85-%d8%a7%d8%ad%d9%84%d9%89-%d8%a7%d9%84%d8%a7%d9%88%d9%82%d8%a7%d8%aa-2004",
-        type: "movie",
-        name: "احلى الاوقات ( 2004 )",
-        poster: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Red_Apple.jpg/440px-Red_Apple.jpg",
-        description: "تقرر (سلمى) مغادرة منزل أمها عقب وفاتها، أنها لا ترغب أن تعيش مع زوج أمها (ربيع)...",
-        releaseInfo: "",
-        links: ["https://a.asd.homes/%d9%81%d9%8a%d9%84%d9%85-%d8%a7%d8%ad%d9%84%d9%89-%d8%a7%d9%84%d8%a7%d9%88%d9%82%d8%a7%d8%aa-2004/"]
-      }
-    ]
-  };
+return {
+  metas: [
+    {
+      id: "asd:example-id",
+      type: "movie",
+      name: "احلى الاوقات",
+      poster: "https://a.asd.homes/wp-content/uploads/2025/11/Best-Times-2004-300x450.webp",
+      description: "وصف مختصر آمن",
+      releaseInfo: "2004",
+      links: ["https://a.asd.homes/sample-movie/"]
+    }
+  ]
+};s
 }
   if (type === 'series' && id === 'arabseed-arabic-series') {
     const metas = await getSeries(skip);
