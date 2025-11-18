@@ -35,14 +35,15 @@ async function getSeries(skip = 0) {
       if (!seriesUrl || !title) {
         return;
       }
-
+      const validPoster =
+        posterUrl && posterUrl.startsWith("http") ? posterUrl : undefined;
       const id = "asd:" + Buffer.from(seriesUrl).toString("base64");
 
       series.push({
         id: id,
         type: "series",
         name: title,
-        background: posterUrl || undefined,
+        poster: validPoster,
         posterShape: "poster",
         description: description || `مسلسل ${title}`,
       });
@@ -107,17 +108,16 @@ async function getSeriesMeta(id) {
       });
     });
 
-    console.log(
-      `[DEBUG] Series meta - title: "${title}", poster: "${posterUrl}"`
-    );
+
+
+    console.log(`[DEBUG] Series meta - title: "${title}", poster: "${posterUrl}"`);
     return {
       id,
       type: "series",
       name: title,
-      poster:
-        "https://a.asd.homes/wp-content/uploads/2025/08/d339cd76-ab6a-4694-aff3-586092c712de.jpg",
-      posterShape: "poster",
-      description: description,
+      background: posterUrl||undefined,
+      description:
+      description,
       videos,
     };
   } catch (error) {
