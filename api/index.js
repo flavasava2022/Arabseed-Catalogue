@@ -1,13 +1,12 @@
-const { getRouter } = require('stremio-addon-sdk');
-const manifest = require('../manifest.js');
+const { addonBuilder, getRouter } = require('stremio-addon-sdk');
+const manifest = require('../manifest');
 const { getMovies, getMovieMeta, getMovieStreams } = require('../scrapers/movies');
 const { getSeries, getSeriesMeta, getSeriesStreams } = require('../scrapers/series');
 
-const { addonBuilder } = require('stremio-addon-sdk');
 const builder = new addonBuilder(manifest);
 
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
-  const skip = extra && extra.skip ? parseInt(extra.skip) : 0;
+  const skip = extra?.skip ? parseInt(extra.skip) : 0;
   if (type === 'movie' && id === 'arabseed-arabic-movies') {
     const metas = await getMovies(skip);
     return { metas };
@@ -31,6 +30,7 @@ builder.defineStreamHandler(async ({ type, id }) => {
   return { streams: [] };
 });
 
-// This is the ONLY export Vercel expects: a function handling (req, res)
 const router = getRouter(builder.getInterface());
+
+// Export the router function as the default export to satisfy Vercel's handler requirement
 module.exports = (req, res) => router(req, res);
