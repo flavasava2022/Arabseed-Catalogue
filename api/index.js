@@ -1,4 +1,4 @@
-const addon = require('../addon');
+const { manifest, catalogHandler, metaHandler, streamHandler } = require('../addon');
 
 export default async function handler(req, res) {
   const url = req.url;
@@ -11,30 +11,28 @@ export default async function handler(req, res) {
 
   try {
     if (url === '/' || url === '/manifest.json') {
-      return res.status(200).json(addon.manifest);
+      return res.status(200).json(manifest);
     }
 
     const catalogMatch = url.match(/^\/catalog\/([^/]+)\/([^/]+)(?:\/(.+))?\.json$/);
     if (catalogMatch) {
       const [, type, id, extraStr] = catalogMatch;
       const extra = extraStr ? JSON.parse(decodeURIComponent(extraStr)) : {};
-      const catalog = addon.catalog.find(c => c.types.includes(type));
-      if (!catalog) return res.status(404).json({ error: 'Catalog not found' });
-      const result = await catalog.handler({ type, id, extra });
+      const result = await catalogHandler({ type, id, extra });
       return res.status(200).json(result);
     }
 
     const streamMatch = url.match(/^\/stream\/([^/]+)\/(.+)\.json$/);
     if (streamMatch) {
       const [, type, id] = streamMatch;
-      const result = await addon.stream.handler({ type, id: decodeURIComponent(id) });
+      const result = await streamHandler({ type, id: decodeURIComponent(id) });
       return res.status(200).json(result);
     }
 
     const metaMatch = url.match(/^\/meta\/([^/]+)\/(.+)\.json$/);
     if (metaMatch) {
       const [, type, id] = metaMatch;
-      const result = await addon.meta.handler({ type, id: decodeURIComponent(id) });
+      const result = await metaHandler({ type, id: decodeURIComponent(id) });
       return res.status(200).json(result);
     }
 

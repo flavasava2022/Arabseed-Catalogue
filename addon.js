@@ -1,11 +1,11 @@
 const { addonBuilder } = require('stremio-addon-sdk');
-const manifest = require('./manifest');  // Your arabseed manifest
+const manifest = require('./manifest');
 const { getMovies, getMovieMeta, getMovieStreams } = require('./scrapers/movies');
 const { getSeries, getSeriesMeta, getSeriesStreams } = require('./scrapers/series');
 
 const builder = new addonBuilder(manifest);
 
-builder.defineCatalogHandler(async ({ type, id, extra }) => {
+const catalogHandler = async ({ type, id, extra }) => {
   const skip = extra?.skip ? parseInt(extra.skip) : 0;
   if (type === 'movie' && id === 'arabseed-arabic-movies') {
     const metas = await getMovies(skip);
@@ -16,18 +16,27 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
     return { metas };
   }
   return { metas: [] };
-});
+};
 
-builder.defineMetaHandler(async ({ type, id }) => {
+const metaHandler = async ({ type, id }) => {
   if (type === 'movie') return { meta: await getMovieMeta(id) };
   if (type === 'series') return { meta: await getSeriesMeta(id) };
   return { meta: null };
-});
+};
 
-builder.defineStreamHandler(async ({ type, id }) => {
+const streamHandler = async ({ type, id }) => {
   if (type === 'movie') return { streams: await getMovieStreams(id) };
   if (type === 'series') return { streams: await getSeriesStreams(id) };
   return { streams: [] };
-});
+};
 
-module.exports = builder.getInterface();
+builder.defineCatalogHandler(catalogHandler);
+builder.defineMetaHandler(metaHandler);
+builder.defineStreamHandler(streamHandler);
+
+module.exports = {
+  manifest,
+  catalogHandler,
+  metaHandler,
+  streamHandler,
+};
