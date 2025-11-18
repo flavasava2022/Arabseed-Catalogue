@@ -50,7 +50,7 @@ async function getSeries(skip = 0) {
   }
 }
 
-// Enhanced AJAX episode loader with proper headers and referer
+// Fetch all episodes for a given season, paging through AJAX
 async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
   const episodes = [];
   let offset = 0;
@@ -58,22 +58,21 @@ async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
 
   while (hasMore) {
     try {
-      console.log(`[DEBUG] Fetching episodes for season ${seasonId}, offset ${offset}`);
-
       const postData = new URLSearchParams();
-      postData.append("action", "seasonepisodes");
       postData.append("seasonid", seasonId);
       postData.append("offset", offset);
 
+      console.log(`[DEBUG] Sending AJAX POST for episodes. SeasonId: ${seasonId}, Offset: ${offset}`);
+
       const response = await axios.post(
-        `${BASE_URL}/wp-admin/admin-ajax.php`,
+        `${BASE_URL}/season__episodes/`,
         postData.toString(),
         {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "User-Agent": USER_AGENT,
             "X-Requested-With": "XMLHttpRequest",
-            "Referer": refererUrl,
+            Referer: refererUrl,
           },
           timeout: 12000,
         }
@@ -95,7 +94,7 @@ async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
         if (!episodeUrl) return;
 
         const match = episodeTitle.match(/\d+/);
-        const episodeNum = match ? parseInt(match[0]) : i + 1;
+        const episodeNum = match ? parseInt(match[0]) : offset + i + 1;
 
         const episodeId = "asd:" + Buffer.from(episodeUrl).toString("base64");
 
@@ -103,7 +102,7 @@ async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
           id: episodeId,
           title: `الحلقة ${episodeNum}`,
           episode: episodeNum,
-          season: null, // Assign season number later
+          season: null,
           released: new Date().toISOString(),
         });
 
@@ -112,7 +111,6 @@ async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
 
       console.log(`[DEBUG] Episodes found this page: ${episodesFoundOnPage}`);
 
-      // This flag can be string or boolean depending on server response
       hasMore = response.data.hasmore === true || response.data.hasmore === "true";
       offset += 20;
     } catch (error) {
@@ -125,6 +123,7 @@ async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
   return episodes;
 }
 
+// Fetch series meta including all episodes for all seasons
 async function getSeriesMeta(id) {
   try {
     const seriesUrl = Buffer.from(id.replace("asd:", ""), "base64").toString();
@@ -161,7 +160,7 @@ async function getSeriesMeta(id) {
     let allEpisodes = [];
 
     if (seasons.length === 0) {
-      // No seasons, fallback to single season or single episode list
+      // Single season fallback: enumerate episodes in page, check for load more
       $(".episodes__list a, .seasons__list a").each((i, elem) => {
         const $elem = $(elem);
         const episodeUrl = $elem.attr("href");
@@ -182,7 +181,6 @@ async function getSeriesMeta(id) {
         });
       });
 
-      // Check for 'load more' button for additional episodes
       const loadMoreBtn = $(".load__more__episodes");
       if (loadMoreBtn.length > 0) {
         const postId = loadMoreBtn.attr("data-id");
@@ -194,7 +192,6 @@ async function getSeriesMeta(id) {
         }
       }
     } else {
-      // Multiple seasons - fetch all episodes for each season
       for (const season of seasons) {
         console.log(`[DEBUG] Fetching episodes for season "${season.name}" with ID: ${season.id}`);
         const episodes = await fetchAllEpisodesForSeason(season.id, seriesUrl);
@@ -203,10 +200,7 @@ async function getSeriesMeta(id) {
       }
     }
 
-    // Deduplicate episodes by ID
     const uniqueEpisodes = Array.from(new Map(allEpisodes.map(ep => [ep.id, ep])).values());
-
-    // Sort episodes by season and episode number
     uniqueEpisodes.sort((a, b) => (a.season - b.season) || (a.episode - b.episode));
 
     console.log(`[DEBUG] Total unique episodes gathered: ${uniqueEpisodes.length}`);
