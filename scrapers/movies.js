@@ -1,73 +1,56 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const Buffer = require('buffer').Buffer;
 
 const BASE_URL = 'https://a.asd.homes';
 const MOVIES_CATEGORY = '/category/arabic-movies-6/';
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
 async function getMovies(skip = 0) {
   try {
     const page = skip > 0 ? Math.floor(skip / 20) + 1 : 1;
     const url = page > 1 ? `${BASE_URL}${MOVIES_CATEGORY}page/${page}/` : `${BASE_URL}${MOVIES_CATEGORY}`;
-    
     console.log('Fetching movies from:', url);
-    
+
     const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
+      headers: { 'User-Agent': USER_AGENT },
       timeout: 15000
     });
 
     const $ = cheerio.load(response.data);
     const movies = [];
 
-    // Use the correct selector: .movie__block (with underscores)
     $('.movie__block').each((i, elem) => {
       const $elem = $(elem);
-      
-      // Extract movie URL (the <a> tag itself has the href)
       const movieUrl = $elem.attr('href');
-      
-      // Extract title (from h3 inside post__info)
       const title = $elem.find('.post__info h3').text().trim();
-      
-      // Extract poster (data-src attribute)
-      const posterUrl = $elem.find('.post__image img').attr('data-src') || 
-                       $elem.find('.post__image img').attr('src');
-      
-      // Extract description if available
+      const posterUrl = $elem.find('.post__image img').attr('data-src') || $elem.find('.post__image img').attr('src');
       const description = $elem.find('.post__info p').text().trim();
-      
-      // Extract year from title
       const yearMatch = title.match(/\((\d{4})\)/);
       const year = yearMatch ? yearMatch[1] : '';
 
-      // Skip if essential data is missing
       if (!movieUrl || !title) {
         console.log('Skipping item - missing URL or title');
         return;
       }
 
-      // Generate unique ID from URL
-      const urlParts = movieUrl.split('/').filter(Boolean);
-      const slug = urlParts[urlParts.length - 1];
-      const id = 'asd:' + slug;
+      const id = 'asd:' + Buffer.from(movieUrl).toString('base64');
+      const validPoster = posterUrl && posterUrl.startsWith('http') ? posterUrl : undefined;
 
       movies.push({
-        id: id,
+        id,
         type: 'movie',
         name: title,
-        poster: posterUrl,
+        poster: validPoster,
         posterShape: 'poster',
         description: description || `فيلم ${title}`,
-        releaseInfo: year,
-        links: [movieUrl]
+        releaseInfo: year
       });
     });
 
     console.log(`✓ Found ${movies.length} movies`);
     return movies;
-    
+
   } catch (error) {
     console.error('Error fetching movies:', error.message);
     return [];
@@ -76,60 +59,51 @@ async function getMovies(skip = 0) {
 
 async function getMovieMeta(id) {
   try {
-    const movieSlug = id.replace('asd:', '');
-    const url = `${BASE_URL}/${movieSlug}/`;
-    
-    console.log('Fetching movie meta from:', url);
-    
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
+    const movieUrl = Buffer.from(id.replace('asd:', ''), 'base64').toString();
+    console.log('Fetching movie meta from:', movieUrl);
+
+    const response = await axios.get(movieUrl, {
+      headers: { 'User-Agent': USER_AGENT },
       timeout: 10000
     });
-    
+
     const $ = cheerio.load(response.data);
 
-    const title = $('.post__title h1').text().trim() || 
-                 $('.post__name').text().trim();
-    const poster = $('.post__image img').attr('data-src') || 
-                  $('.post__image img').attr('src');
-    const description = $('.story__text').text().trim() || 
-                       $('.post__story').text().trim();
+    const title = $('.post__title h1').text().trim() || $('.post__name').text().trim();
+    const posterUrl = $('.post__image img').attr('data-src') || $('.post__image img').attr('src');
+    const description = $('.story__text').text().trim() || $('.post__story').text().trim();
     const year = $('.year').text().trim();
+
+    const validPoster = posterUrl && posterUrl.startsWith('http') ? posterUrl : undefined;
 
     return {
       id: id,
       type: 'movie',
       name: title,
-      poster: poster,
+      poster: validPoster,
       description: description,
       releaseInfo: year
     };
   } catch (error) {
     console.error('Error fetching movie meta:', error.message);
-    return null;
+    return { meta: {} };
   }
 }
 
 async function getMovieStreams(id) {
   try {
-    const movieSlug = id.replace('asd:', '');
-    const watchUrl = `${BASE_URL}/${movieSlug}/watch/`;
-    
+    const movieSlug = Buffer.from(id.replace('asd:', ''), 'base64').toString();
+    const watchUrl = `${movieSlug}watch/`;
     console.log('Fetching movie streams from:', watchUrl);
-    
+
     const response = await axios.get(watchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
+      headers: { 'User-Agent': USER_AGENT },
       timeout: 10000
     });
-    
+
     const $ = cheerio.load(response.data);
     const streams = [];
-    
-    // Extract video sources from iframes
+
     $('iframe').each((i, elem) => {
       const src = $(elem).attr('src');
       if (src) {
