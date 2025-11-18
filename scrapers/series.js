@@ -105,10 +105,9 @@ async function getSeriesMeta(id) {
     const title = $(".post__title h1").text().trim();
     const posterUrl =
       $(".poster__single img").attr("src") ||
-      $(".post__image img").attr("data-src") ||
-      $(".post__image img").attr("src");
-    const validPoster =
-      posterUrl && posterUrl.startsWith("https://") ? posterUrl : undefined;
+      $(".poster__single img").attr("href") ||
+      $(".poster__single img").attr("data-src");
+
     const description = $(".story__text").text().trim();
 
     console.log(`[DEBUG] Series meta - title: "${title}", poster: "${poster}"`);
@@ -117,7 +116,7 @@ async function getSeriesMeta(id) {
       id,
       type: "series",
       name: title,
-      poster: validPoster,
+      poster: posterUrl || undefined,
       description,
       videos,
     };
