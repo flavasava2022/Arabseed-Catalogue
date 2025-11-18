@@ -18,7 +18,7 @@ const catalogHandler = async ({ type, id, extra }) => {
           poster: "https://a.asd.homes/wp-content/uploads/2025/11/Best-Times-2004-300x450.webp",
           description: "وصف مختصر آمن",
           releaseInfo: "2004",
-        },...getMovies
+        }
       ]
     };
   }
