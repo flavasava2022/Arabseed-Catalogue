@@ -7,10 +7,20 @@ const builder = new addonBuilder(manifest);
 
 const catalogHandler = async ({ type, id, extra }) => {
   const skip = extra?.skip ? parseInt(extra.skip) : 0;
-  if (type === 'movie' && id === 'arabseed-arabic-movies') {
-    const metas = await getMovies(skip);
-    return { metas };
-  }
+if (type === 'movie' && id === 'arabseed-arabic-movies') {
+  return {
+    metas: [
+      {
+        id: "asd:test-movie",
+        type: "movie",
+        name: "Test Movie",
+        poster: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Red_Apple.jpg/440px-Red_Apple.jpg",
+        description: "Testing Stremio Web rendering.",
+        releaseInfo: "2025"
+      }
+    ]
+  };
+}
   if (type === 'series' && id === 'arabseed-arabic-series') {
     const metas = await getSeries(skip);
     return { metas };
