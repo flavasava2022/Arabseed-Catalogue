@@ -1,6 +1,5 @@
-// addon.js
 const { addonBuilder } = require('stremio-addon-sdk');
-const manifest = require('./manifest');
+const manifest = require('./manifest');  // Your arabseed manifest
 const { getMovies, getMovieMeta, getMovieStreams } = require('./scrapers/movies');
 const { getSeries, getSeriesMeta, getSeriesStreams } = require('./scrapers/series');
 
@@ -9,10 +8,12 @@ const builder = new addonBuilder(manifest);
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
   const skip = extra?.skip ? parseInt(extra.skip) : 0;
   if (type === 'movie' && id === 'arabseed-arabic-movies') {
-    return { metas: await getMovies(skip) };
+    const metas = await getMovies(skip);
+    return { metas };
   }
   if (type === 'series' && id === 'arabseed-arabic-series') {
-    return { metas: await getSeries(skip) };
+    const metas = await getSeries(skip);
+    return { metas };
   }
   return { metas: [] };
 });
@@ -29,5 +30,4 @@ builder.defineStreamHandler(async ({ type, id }) => {
   return { streams: [] };
 });
 
-// Export the interface object directly
 module.exports = builder.getInterface();
