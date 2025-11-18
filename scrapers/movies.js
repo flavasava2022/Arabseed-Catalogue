@@ -72,7 +72,6 @@ async function getMovieMeta(id) {
       headers: { "User-Agent": USER_AGENT },
       timeout: 10000,
     });
-    const meta = [];
     const $ = cheerio.load(response.data);
     const title =
       $(".post__title h1").text().trim() || $(".post__name").text().trim();
@@ -85,14 +84,14 @@ async function getMovieMeta(id) {
     const year = $(".year").text().trim();
 
 
-    
+
     if (title && posterUrl) {
             console.log("Movie meta fetched:", { title, posterUrl, year });
       return {
         id: id,
         type: "movie",
         name: title,
-        poster: posterUrl,
+        background: posterUrl,
         description: description,
         releaseInfo: year,
       };
