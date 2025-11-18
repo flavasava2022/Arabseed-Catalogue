@@ -110,8 +110,7 @@ async function getSeriesMeta(id) {
 
     const description = $(".story__text").text().trim();
 
-    console.log(`[DEBUG] Series meta - title: "${title}", poster: "${poster}"`);
-    console.log('posterurl',posterUrl);
+    console.log(`[DEBUG] Series meta - title: "${title}", poster: "${posterUrl}"`);
     return {
       id,
       type: "series",
