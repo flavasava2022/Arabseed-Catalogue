@@ -1,30 +1,34 @@
-const { getRouter } = require('stremio-addon-sdk');
-const addonInterface = require('./api/index');
-const express = require('express');
+// addon.js
+const { addonBuilder } = require('stremio-addon-sdk');
+const manifest = require('./manifest');
+const { getMovies, getMovieMeta, getMovieStreams } = require('./scrapers/movies');
+const { getSeries, getSeriesMeta, getSeriesStreams } = require('./scrapers/series');
 
-const app = express();
+const builder = new addonBuilder(manifest);
 
-// Enable CORS for all routes
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+builder.defineCatalogHandler(async ({ type, id, extra }) => {
+  const skip = extra?.skip ? parseInt(extra.skip) : 0;
+  if (type === 'movie' && id === 'arabseed-arabic-movies') {
+    const metas = await getMovies(skip);
+    return { metas };
   }
-  
-  next();
+  if (type === 'series' && id === 'arabseed-arabic-series') {
+    const metas = await getSeries(skip);
+    return { metas };
+  }
+  return { metas: [] };
 });
 
-// Add the addon routes
-app.use(getRouter(addonInterface));
-
-// Start server
-const PORT = 7000;
-app.listen(PORT, () => {
-  console.log('🚀 ArabSeed addon running at http://localhost:7000/manifest.json');
-  console.log('📱 Desktop: http://localhost:7000/manifest.json');
-  console.log('🌐 Web: http://localhost:7000/manifest.json (CORS enabled)');
+builder.defineMetaHandler(async ({ type, id }) => {
+  if (type === 'movie') return { meta: await getMovieMeta(id) };
+  if (type === 'series') return { meta: await getSeriesMeta(id) };
+  return { meta: null };
 });
+
+builder.defineStreamHandler(async ({ type, id }) => {
+  if (type === 'movie') return { streams: await getMovieStreams(id) };
+  if (type === 'series') return { streams: await getSeriesStreams(id) };
+  return { streams: [] };
+});
+
+module.exports = { getInterface: () => builder.getInterface() };

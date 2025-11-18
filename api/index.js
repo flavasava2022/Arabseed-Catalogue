@@ -1,38 +1,52 @@
-const { addonBuilder, getRouter } = require('stremio-addon-sdk');
-const manifest = require('../manifest');
-const { getMovies, getMovieMeta, getMovieStreams } = require('../scrapers/movies');
-const { getSeries, getSeriesMeta, getSeriesStreams } = require('../scrapers/series');
+// api/index.js
+const addonInterface = require('../addon');
 
-const builder = new addonBuilder(manifest);
+export default async function handler(req, res) {
+  const url = req.url;
 
-// Define handlers
-builder.defineCatalogHandler(async ({ type, id, extra }) => {
-  const skip = extra?.skip ? parseInt(extra.skip) : 0;
-  if (type === 'movie' && id === 'arabseed-arabic-movies') {
-    const metas = await getMovies(skip);
-    return { metas };
+  // CORS headers for web compatibility
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
-  if (type === 'series' && id === 'arabseed-arabic-series') {
-    const metas = await getSeries(skip);
-    return { metas };
+
+  try {
+    const addon = addonInterface.getInterface();
+
+    if (url === '/' || url === '/manifest.json') {
+      return res.status(200).json(addon.manifest);
+    }
+
+    const catalogMatch = url.match(/^\/catalog\/([^/]+)\/([^/]+)(?:\/(.+))?\.json$/);
+    if (catalogMatch) {
+      const [, type, id, extraStr] = catalogMatch;
+      const extra = extraStr ? JSON.parse(decodeURIComponent(extraStr)) : {};
+      const catalog = addon.catalog.find(c => c.types.includes(type));
+      if (!catalog) return res.status(404).json({ error: 'Catalog not found' });
+      const result = await catalog.handler({ type, id, extra });
+      return res.status(200).json(result);
+    }
+
+    const streamMatch = url.match(/^\/stream\/([^/]+)\/(.+)\.json$/);
+    if (streamMatch) {
+      const [, type, id] = streamMatch;
+      const result = await addon.stream.handler({ type, id: decodeURIComponent(id) });
+      return res.status(200).json(result);
+    }
+
+    const metaMatch = url.match(/^\/meta\/([^/]+)\/(.+)\.json$/);
+    if (metaMatch) {
+      const [, type, id] = metaMatch;
+      const result = await addon.meta.handler({ type, id: decodeURIComponent(id) });
+      return res.status(200).json(result);
+    }
+
+    return res.status(404).json({ error: 'Not found' });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ error: error.message });
   }
-  return { metas: [] };
-});
-
-builder.defineMetaHandler(async ({ type, id }) => {
-  if (type === 'movie') return { meta: await getMovieMeta(id) };
-  if (type === 'series') return { meta: await getSeriesMeta(id) };
-  return { meta: null };
-});
-
-builder.defineStreamHandler(async ({ type, id }) => {
-  if (type === 'movie') return { streams: await getMovieStreams(id) };
-  if (type === 'series') return { streams: await getSeriesStreams(id) };
-  return { streams: [] };
-});
-
-// Create router function compatible with (req, res) signature
-const router = getRouter(builder.getInterface());
-
-// Export the router function as default handler for Vercel
-module.exports = router;
+}
