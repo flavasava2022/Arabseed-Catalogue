@@ -108,20 +108,18 @@ async function getSeriesMeta(id) {
       });
     });
 
-    console.log(
-      `[DEBUG] Series meta - title: "${title}", poster: "${posterUrl}"`
-    );
+
+
+    console.log(`[DEBUG] Series meta - title: "${title}", poster: "${posterUrl}"`);
     return {
-      meta: {
-        id,
-        type: "series",
-        name: title,
-        poster:
-          "https://a.asd.homes/wp-content/uploads/2025/08/d339cd76-ab6a-4694-aff3-586092c712de.jpg",
-        posterShape: "poster",
-        description: description,
-        videos,
-      },
+      id,
+      type: "series",
+      name: title,
+      poster: "https://a.asd.homes/wp-content/uploads/2025/08/d339cd76-ab6a-4694-aff3-586092c712de.jpg",
+      posterShape: "poster",
+      description:
+      description,
+      videos,
     };
   } catch (error) {
     console.error(`[ERROR] Failed to fetch series meta for ID ${id}:`, error);
