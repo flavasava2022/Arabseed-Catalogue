@@ -14,14 +14,14 @@ async function getSeries(skip = 0) {
       page > 1
         ? `${BASE_URL}${SERIES_CATEGORY}page/${page}/`
         : `${BASE_URL}${SERIES_CATEGORY}`;
-    console.log(`[DEBUG] Fetching series page: ${page}, URL: ${url}`);
+
 
     const response = await axios.get(url, {
       headers: { "User-Agent": USER_AGENT },
       timeout: 15000,
     });
 
-    console.log(`[DEBUG] Received response with status: ${response.status}`);
+
 
     const $ = cheerio.load(response.data);
     const series = [];
@@ -31,21 +31,19 @@ async function getSeries(skip = 0) {
       const seriesUrl = $elem.attr("href");
       const title = $elem.find(".post__info h3").text().trim();
       const posterUrl =
-        $elem.find(".post__image img").attr("data-src") ||
+        $elem.find(".poster__single img").attr("data-src") ||
         $elem.find(".post__image img").attr("src");
       const description = $elem.find(".post__info p").text().trim();
 
       if (!seriesUrl || !title) {
-        console.log(
-          `[DEBUG] Skipping item due to missing url or title at index ${i}`
-        );
+
         return;
       }
       const validPoster =
         posterUrl && posterUrl.startsWith("http") ? posterUrl : undefined;
       const id = "asd:" + Buffer.from(seriesUrl).toString("base64");
 
-      console.log(`[DEBUG] Parsed series - title: "${title}", id: "${id}"`);
+
 
       series.push({
         id: id,

@@ -70,7 +70,7 @@ async function getMovieMeta(id) {
     const $ = cheerio.load(response.data);
 
     const title = $('.post__title h1').text().trim() || $('.post__name').text().trim();
-    const posterUrl = $('.post__image img').attr('data-src') || $('.post__image img').attr('src');
+    const posterUrl = $('.post__image img').attr('data-src') || $('.poster__single img').attr('src');
     const description = $('.story__text').text().trim() || $('.post__story').text().trim();
     const year = $('.year').text().trim();
 
