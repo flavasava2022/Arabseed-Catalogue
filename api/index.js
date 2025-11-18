@@ -1,8 +1,10 @@
+// Use the same interface object
 const addon = require('../addon');
 
 export default async function handler(req, res) {
   const url = req.url;
 
+  // Set CORS headers for web compatibility
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
   res.setHeader('Content-Type', 'application/json');
@@ -10,6 +12,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
+    // Now "addon" is the actual interface object with "catalog", "meta", "stream" etc.
     if (url === '/' || url === '/manifest.json') {
       return res.status(200).json(addon.manifest);
     }
@@ -18,6 +21,7 @@ export default async function handler(req, res) {
     if (catalogMatch) {
       const [, type, id, extraStr] = catalogMatch;
       const extra = extraStr ? JSON.parse(decodeURIComponent(extraStr)) : {};
+      // The interface has the catalog array directly
       const catalog = addon.catalog.find(c => c.types.includes(type));
       if (!catalog) return res.status(404).json({ error: 'Catalog not found' });
       const result = await catalog.handler({ type, id, extra });
