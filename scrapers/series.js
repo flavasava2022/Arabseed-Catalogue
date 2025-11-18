@@ -10,34 +10,36 @@ async function getSeries(skip = 0) {
   try {
     const page = skip > 0 ? Math.floor(skip / 20) + 1 : 1;
     const url = page > 1 ? `${BASE_URL}${SERIES_CATEGORY}page/${page}/` : `${BASE_URL}${SERIES_CATEGORY}`;
-    console.log('Fetching series from:', url);
+    console.log(`[DEBUG] Fetching series page: ${page}, URL: ${url}`);
 
     const response = await axios.get(url, {
-      headers: {
-        'User-Agent': USER_AGENT
-      },
+      headers: { 'User-Agent': USER_AGENT },
       timeout: 15000
     });
+
+    console.log(`[DEBUG] Received response with status: ${response.status}`);
+
     const $ = cheerio.load(response.data);
     const series = [];
-
-    // Use the same selector as movies
     $('.movie__block').each((i, elem) => {
       const $elem = $(elem);
 
       const seriesUrl = $elem.attr('href');
       const title = $elem.find('.post__info h3').text().trim();
-      const posterUrl = $elem.find('.post__image img').attr('data-src') ||
-                        $elem.find('.post__image img').attr('src');
+      const posterUrl = $elem.find('.post__image img').attr('data-src') || $elem.find('.post__image img').attr('src');
       const description = $elem.find('.post__info p').text().trim();
 
-      if (!seriesUrl || !title) return;
+      if (!seriesUrl || !title) {
+        console.log(`[DEBUG] Skipping item due to missing url or title at index ${i}`);
+        return;
+      }
 
-      // Encode the full URL to base64 for consistent ID usage
       const id = 'asd:' + Buffer.from(seriesUrl).toString('base64');
 
+      console.log(`[DEBUG] Parsed series - title: "${title}", id: "${id}"`);
+
       series.push({
-        id: id,
+        id,
         type: 'series',
         name: title,
         poster: posterUrl,
@@ -47,11 +49,10 @@ async function getSeries(skip = 0) {
       });
     });
 
-    console.log(`✓ Found ${series.length} series`);
+    console.log(`[DEBUG] Total series parsed: ${series.length}`);
     return series;
-
   } catch (error) {
-    console.error('Error fetching series:', error.message);
+    console.error(`[ERROR] Failed to fetch series catalog:`, error);
     return [];
   }
 }
@@ -59,74 +60,80 @@ async function getSeries(skip = 0) {
 async function getSeriesMeta(id) {
   try {
     const seriesUrl = Buffer.from(id.replace('asd:', ''), 'base64').toString();
-    const url = `${seriesUrl}`;
-    console.log('Fetching series meta from:', url);
+    console.log(`[DEBUG] Fetching series meta from URL: ${seriesUrl}`);
 
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': USER_AGENT
-      },
+    const response = await axios.get(seriesUrl, {
+      headers: { 'User-Agent': USER_AGENT },
       timeout: 10000
     });
+    console.log(`[DEBUG] Meta page response status: ${response.status}`);
 
     const $ = cheerio.load(response.data);
 
-    // Extract episodes
     const videos = [];
+
     $('.episodes__list a, .seasons__list a').each((i, elem) => {
       const $elem = $(elem);
       const episodeUrl = $elem.attr('href');
       const episodeTitle = $elem.text().trim();
 
-      if (episodeUrl) {
-        // Extract episode number
-        const match = episodeTitle.match(/\d+/);
-        const episodeNum = match ? parseInt(match[0]) : i + 1;
-
-        // Use full base64 encoded episode URL in the ID
-        const episodeId = `asd:${Buffer.from(episodeUrl).toString('base64')}`;
-
-        videos.push({
-          id: episodeId,
-          title: `الحلقة ${episodeNum}`,
-          season: 1,
-          episode: episodeNum,
-          released: new Date().toISOString(),
-        });
+      if (!episodeUrl) {
+        console.log(`[DEBUG] Skipping episode at index ${i} due to missing href`);
+        return;
       }
+
+      const match = episodeTitle.match(/\d+/);
+      const episodeNum = match ? parseInt(match[0]) : i + 1;
+
+      const episodeId = `asd:${Buffer.from(episodeUrl).toString('base64')}`;
+
+      console.log(`[DEBUG] Parsed episode ${episodeNum} - ID: ${episodeId}, title: "${episodeTitle}"`);
+
+      videos.push({
+        id: episodeId,
+        title: `الحلقة ${episodeNum}`,
+        season: 1,
+        episode: episodeNum,
+        released: new Date().toISOString()
+      });
     });
 
     const title = $('.post__title h1').text().trim();
-    const poster = $('.post__image img').attr('data-src') ||
-                   $('.post__image img').attr('src');
+    const poster = $('.post__image img').attr('data-src') || $('.post__image img').attr('src');
     const description = $('.story__text').text().trim();
 
+    console.log(`[DEBUG] Series meta - title: "${title}", poster: "${poster}"`);
+
     return {
-      id: id,
+      id,
       type: 'series',
       name: title,
-      poster: poster,
-      description: description,
-      videos: videos
+      poster,
+      description,
+      videos
     };
   } catch (error) {
-    console.error('Error fetching series meta:', error.message);
+    console.error(`[ERROR] Failed to fetch series meta for ID ${id}:`, error);
     return { meta: {} };
   }
 }
 
 async function getSeriesStreams(id) {
   try {
-    // The id is like `asd:<episodeEncodedUrl>`
     const encodedEpisodeUrl = id.split(':')[1];
-    if (!encodedEpisodeUrl) return { streams: [] };
+    if (!encodedEpisodeUrl) {
+      console.log(`[DEBUG] No URL found in series stream ID: ${id}`);
+      return [];
+    }
 
     const episodeUrl = Buffer.from(encodedEpisodeUrl, 'base64').toString();
-    console.log('Fetching series streams from:', episodeUrl);
+    console.log(`[DEBUG] Fetching streams from episode URL: ${episodeUrl}`);
 
     const response = await axios.get(episodeUrl, {
       headers: { 'User-Agent': USER_AGENT }
     });
+
+    console.log(`[DEBUG] Series streams page status: ${response.status}`);
 
     const $ = cheerio.load(response.data);
 
@@ -134,6 +141,7 @@ async function getSeriesStreams(id) {
     $('iframe').each((i, elem) => {
       const src = $(elem).attr('src');
       if (src) {
+        console.log(`[DEBUG] Found stream iframe src: ${src}`);
         streams.push({
           name: 'ArabSeed',
           title: `خادم ${i + 1}`,
@@ -142,10 +150,11 @@ async function getSeriesStreams(id) {
       }
     });
 
-    console.log(`✓ Found ${streams.length} streams`);
+    console.log(`[DEBUG] Total streams found: ${streams.length}`);
+
     return streams;
   } catch (error) {
-    console.error('Error fetching series streams:', error.message);
+    console.error(`[ERROR] Failed to fetch series streams for ID ${id}:`, error);
     return [];
   }
 }
