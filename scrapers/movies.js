@@ -72,27 +72,28 @@ async function getMovieMeta(id) {
       headers: { "User-Agent": USER_AGENT },
       timeout: 10000,
     });
-
+    const meta = [];
     const $ = cheerio.load(response.data);
     const title =
       $(".post__title h1").text().trim() || $(".post__name").text().trim();
     const posterUrl =
-      $(".poster__single img").attr("src") ||
-      $(".post__image img").attr("data-src") ||
-      $(".post__image img").attr("src");
+      $(".poster__single img")?.attr("src") ||
+      $(".post__image img")?.attr("data-src") ||
+      $(".post__image img")?.attr("src");
     const description =
       $(".story__text").text().trim() || $(".post__story").text().trim();
     const year = $(".year").text().trim();
-
-    return {
-      id: id,
+    meta.push({
+      id,
       type: "movie",
       name: title,
-      poster:
-        "https://a.asd.homes/wp-content/uploads/2025/08/d339cd76-ab6a-4694-aff3-586092c712de.jpg",
-      description: description,
+      poster: posterUrl,
+      description,
       releaseInfo: year,
-    };
+    });
+    if (title && posterUrl) {
+      return { meta };
+    }
   } catch (error) {
     console.error("Error fetching movie meta:", error.message);
     return { meta: {} };
