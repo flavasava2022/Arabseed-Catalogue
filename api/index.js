@@ -5,6 +5,7 @@ const { getSeries, getSeriesMeta, getSeriesStreams } = require('../scrapers/seri
 
 const builder = new addonBuilder(manifest);
 
+// Define handlers
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
   const skip = extra?.skip ? parseInt(extra.skip) : 0;
   if (type === 'movie' && id === 'arabseed-arabic-movies') {
@@ -30,7 +31,8 @@ builder.defineStreamHandler(async ({ type, id }) => {
   return { streams: [] };
 });
 
+// Create router function compatible with (req, res) signature
 const router = getRouter(builder.getInterface());
 
-// Export the router function as the default export to satisfy Vercel's handler requirement
-module.exports = (req, res) => router(req, res);
+// Export the router function as default handler for Vercel
+module.exports = router;
