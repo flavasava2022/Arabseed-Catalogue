@@ -92,7 +92,14 @@ async function getMovieMeta(id) {
       releaseInfo: year,
     });
     if (title && posterUrl) {
-      return { meta };
+      return {
+        id: id,
+        type: "movie",
+        name: title,
+        poster: posterUrl,
+        description: description,
+        releaseInfo: year,
+      };
     }
   } catch (error) {
     console.error("Error fetching movie meta:", error.message);
