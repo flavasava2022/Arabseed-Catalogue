@@ -50,8 +50,8 @@ async function getSeries(skip = 0) {
   }
 }
 
-// Fetch all episodes for a given season, paging through AJAX
-async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
+// Updated AJAX episode loader with CSRF token and cookies
+async function fetchAllEpisodesForSeason(seasonId, refererUrl, csrfToken, cookies) {
   const episodes = [];
   let offset = 0;
   let hasMore = true;
@@ -61,6 +61,7 @@ async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
       const postData = new URLSearchParams();
       postData.append("seasonid", seasonId);
       postData.append("offset", offset);
+      postData.append("csrf__token", csrfToken);
 
       console.log(`[DEBUG] Sending AJAX POST for episodes. SeasonId: ${seasonId}, Offset: ${offset}`);
 
@@ -73,6 +74,7 @@ async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
             "User-Agent": USER_AGENT,
             "X-Requested-With": "XMLHttpRequest",
             Referer: refererUrl,
+            Cookie: cookies,
           },
           timeout: 12000,
         }
@@ -95,7 +97,6 @@ async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
 
         const match = episodeTitle.match(/\d+/);
         const episodeNum = match ? parseInt(match[0]) : offset + i + 1;
-
         const episodeId = "asd:" + Buffer.from(episodeUrl).toString("base64");
 
         episodes.push({
@@ -123,7 +124,6 @@ async function fetchAllEpisodesForSeason(seasonId, refererUrl) {
   return episodes;
 }
 
-// Fetch series meta including all episodes for all seasons
 async function getSeriesMeta(id) {
   try {
     const seriesUrl = Buffer.from(id.replace("asd:", ""), "base64").toString();
@@ -134,7 +134,16 @@ async function getSeriesMeta(id) {
       timeout: 10000,
     });
 
+    const cookies = response.headers['set-cookie']?.join('; ') || '';
     const $ = cheerio.load(response.data);
+
+    // Extract CSRF token from page (adjust selector accordingly)
+    const csrfToken =
+      $('input[name="csrf__token"]').val() ||
+      $('meta[name="csrf__token"]').attr('content') ||
+      ''; // fallback empty
+
+    console.log(`[DEBUG] Extracted CSRF token: ${csrfToken}`);
 
     const title = $(".post__title h1").text().trim();
     const posterUrl = $(".poster__single img").attr("src") || $(".poster__single img").attr("data-src");
@@ -160,7 +169,6 @@ async function getSeriesMeta(id) {
     let allEpisodes = [];
 
     if (seasons.length === 0) {
-      // Single season fallback: enumerate episodes in page, check for load more
       $(".episodes__list a, .seasons__list a").each((i, elem) => {
         const $elem = $(elem);
         const episodeUrl = $elem.attr("href");
@@ -186,7 +194,7 @@ async function getSeriesMeta(id) {
         const postId = loadMoreBtn.attr("data-id");
         if (postId) {
           console.log(`[DEBUG] Load more episodes detected with postId: ${postId}`);
-          const moreEpisodes = await fetchAllEpisodesForSeason(postId, seriesUrl);
+          const moreEpisodes = await fetchAllEpisodesForSeason(postId, seriesUrl, csrfToken, cookies);
           moreEpisodes.forEach(ep => ep.season = 1);
           allEpisodes = [...allEpisodes, ...moreEpisodes];
         }
@@ -194,7 +202,7 @@ async function getSeriesMeta(id) {
     } else {
       for (const season of seasons) {
         console.log(`[DEBUG] Fetching episodes for season "${season.name}" with ID: ${season.id}`);
-        const episodes = await fetchAllEpisodesForSeason(season.id, seriesUrl);
+        const episodes = await fetchAllEpisodesForSeason(season.id, seriesUrl, csrfToken, cookies);
         episodes.forEach(ep => ep.season = season.number);
         allEpisodes = [...allEpisodes, ...episodes];
       }
