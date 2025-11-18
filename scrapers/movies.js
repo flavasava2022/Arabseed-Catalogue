@@ -83,6 +83,7 @@ async function getMovieMeta(id) {
     const description =
       $(".story__text").text().trim() || $(".post__story").text().trim();
     const year = $(".year").text().trim();
+    console.log("Movie meta fetched:", { title, posterUrl, year });
     meta.push({
       id,
       type: "movie",
