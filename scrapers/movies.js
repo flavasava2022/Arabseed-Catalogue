@@ -91,7 +91,7 @@ async function getMovieMeta(id) {
         id: id,
         type: "movie",
         name: title,
-        background: posterUrl,
+        background: posterUrl||undefined,
         description: description,
         releaseInfo: year,
       };
