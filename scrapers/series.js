@@ -69,7 +69,13 @@ async function getSeriesMeta(id) {
     console.log(`[DEBUG] Meta page response status: ${response.status}`);
 
     const $ = cheerio.load(response.data);
+    const title = $(".post__title h1").text().trim();
+    const posterUrl =
+      $(".poster__single img")?.attr("src") ||
+      $(".poster__single img")?.attr("href") ||
+      $(".poster__single img")?.attr("data-src");
 
+    const description = $(".story__text").text().trim();
     const videos = [];
 
     $(".episodes__list a, .seasons__list a").each((i, elem) => {
@@ -102,20 +108,16 @@ async function getSeriesMeta(id) {
       });
     });
 
-    const title = $(".post__title h1").text().trim();
-    const posterUrl =
-      $(".poster__single img")?.attr("src") ||
-      $(".poster__single img")?.attr("href") ||
-      $(".poster__single img")?.attr("data-src");
 
-    const description = $(".story__text").text().trim();
 
     console.log(`[DEBUG] Series meta - title: "${title}", poster: "${posterUrl}"`);
     return {
       id,
       type: "series",
       name: title,
-      poster: posterUrl || undefined,
+      poster: "https://a.asd.homes/wp-content/uploads/2025/08/d339cd76-ab6a-4694-aff3-586092c712de.jpg",
+      posterShape: "poster",
+      description:
       description,
       videos,
     };
