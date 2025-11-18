@@ -104,14 +104,14 @@ async function getSeriesMeta(id) {
 
     const title = $(".post__title h1").text().trim();
     const posterUrl =
-      $(".poster__single img").attr("src") ||
-      $(".poster__single img").attr("href") ||
-      $(".poster__single img").attr("data-src");
+      $(".poster__single img")?.attr("src") ||
+      $(".poster__single img")?.attr("href") ||
+      $(".poster__single img")?.attr("data-src");
 
     const description = $(".story__text").text().trim();
 
     console.log(`[DEBUG] Series meta - title: "${title}", poster: "${poster}"`);
-    console.log(posterUrl, validPoster);
+    console.log('posterurl',posterUrl);
     return {
       id,
       type: "series",
