@@ -89,7 +89,6 @@ async function getMovieMeta(id) {
       type: "movie",
       name: title,
       poster:
-        posterUrl |
         "https://a.asd.homes/wp-content/uploads/2025/08/d339cd76-ab6a-4694-aff3-586092c712de.jpg",
       description: description,
       releaseInfo: year,
